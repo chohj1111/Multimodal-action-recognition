@@ -18,8 +18,8 @@
 
 import abc
 
-from vatt.data import loading
-from vatt.data import processing
+from data import loading
+from data import processing
 
 
 class ToyFactory(loading.BaseDMVRFactory, abc.ABC):
