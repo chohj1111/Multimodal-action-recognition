@@ -205,6 +205,7 @@ class AudioRepresentations(nn.Module):
         # Used for splitting the original signal
         self.audio_split_samples = audio_split_samples
 
+        # audio segment에 linear projection 걸고 d-dimensional representation
         # Transform input from audio_split_dim to hid_dim
         self.transform_input = nn.Linear(audio_split_samples, hid_dim)
 
@@ -407,3 +408,32 @@ class Model(nn.Module):
         return {'loss': loss, 'loss_in_action': loss_in_action, 'loss_in_object': loss_in_object, \
                 'loss_in_position': loss_in_position, 'predicted_action': predicted_action, \
                 'predicted_object': predicted_object, 'predicted_location': predicted_location}
+
+# video tokenization test 필요
+class VideoRepresentations(nn.Module): 
+    #prepare input-> 
+    def __init__(self, video_voxel_shape, hid_dim, dropout, max_length):
+        self.video_voxel_shape = video_voxel_shape
+        
+        self.video_to_voxels = VideoClipToVoxels()
+        
+        self.pos_embedding = PositionalEncodingComponent(hid_dim, dropout, max_length)
+        
+        self.linear_projection = nn.Linear(video_voxel_shape, hid_dim)
+        
+    def forward(self, video):
+        # video to voxels 
+        voxels = self.video_to_voxels(video)
+        
+        batch_size = voxels.shape[0]
+        voxels = voxels.reshape(batch_size, -1, self.video_voxel_shape)
+
+        video_embeddings = self.linear_projection(voxels)
+        
+        video = self.pos_embedding(video_embeddings)
+        
+        for layer in self.layers:
+             video = layer(video)
+        # audio : [batch_size, src_len, hid_dim]
+
+        return video
